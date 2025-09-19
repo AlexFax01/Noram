@@ -1,27 +1,72 @@
-<!doctype html>
-<html><head><meta charset="utf-8"><title>Scan</title></head>
-<body style="font-family:system-ui;background:#0f1520;color:#dfe7f1;padding:20px">
-  <h2 id="title">Processing scan…</h2>
-  <pre id="out" style="background:#111a27;padding:12px;border:1px solid #263246"></pre>
-  <script>
-    (async () => {
-      const p = new URLSearchParams(location.search);
-      const frame = p.get('frame');                 // напр. FRAME123
-      const checkpoint = p.get('checkpoint');       // напр. Hall3-Glass-Exit
-      const action = p.get('action') || 'forward';  // forward/back (опційно)
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NFC Scan</title>
+  <style>
+    body{margin:0;background:#0f1520;color:#e6eef8;font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif}
+    .wrap{max-width:720px;margin:40px auto;padding:20px}
+    .card{background:#111a27;border:1px solid #243246;border-radius:12px;padding:20px}
+    .ok{color:#3ddc97} .warn{color:#f6c945} .err{color:#ff5d5d}
+    pre{white-space:pre-wrap;word-break:break-word}
+    .btn{display:inline-block;margin-top:14px;padding:10px 14px;border:1px solid #243246;border-radius:8px;color:#e6eef8;text-decoration:none}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h2>Frame — scan</h2>
+    <div id="msg" class="warn">Processing…</div>
+    <pre id="out"></pre>
+    <a id="back" class="btn" href="/">← Back</a>
+  </div>
+</div>
+<script>
+(function () {
+  // 1) Зчитуємо параметри з URL
+  const q = new URLSearchParams(location.search);
+  const payload = {
+    frameId: q.get('frameId') || 'UNKNOWN',
+    checkpoint: q.get('checkpoint') || 'UNKNOWN',
+    action: q.get('action') || 'forward',
+    source: q.get('source') || 'nfc',
+    ts: new Date().toISOString(),
+    ua: navigator.userAgent
+  };
 
-      if(!frame){ document.getElementById('title').textContent='No frame id'; return; }
+  // Підстав, якщо хочеш, вебхук Make/Zapier:
+  // Приклад: const WEBHOOK_URL = "https://hook.eu1.make.com/XXXXX";
+  const WEBHOOK_URL = ""; // залиш порожнім, якщо хочеш слати на /api/scan
 
-      // 1) Показати миттєвий фідбек на сторінці
-      const payload = { frameId: frame, checkpoint, action, ts: new Date().toISOString(), source:'nfc' };
-      document.getElementById('title').textContent = `Frame ${frame} — scanned`;
-      document.getElementById('out').textContent = JSON.stringify(payload, null, 2);
+  // 2) Куди шлемо
+  const endpoint = WEBHOOK_URL || "/api/scan";
 
-      // 2) (опційно) Відправити подію на бекенд/API — зараз заглушка
-      // РОБОЧО: заміни URL нижче на свій API коли буде готовий
-      try{
-        // await fetch('https://api.yourdomain.com/scan', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
-      }catch(e){ /* тихо ігноруємо у MVP */ }
-    })();
-  </script>
-</body></html>
+  // 3) Показуємо, що відправляємо
+  const out = document.getElementById('out');
+  out.textContent = JSON.stringify(payload, null, 2);
+
+  // 4) Відправляємо дію
+  fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  })
+  .then(async (r) => {
+    if (!r.ok) throw new Error(await r.text());
+    return r.json().catch(() => ({}));
+  })
+  .then((res) => {
+    document.getElementById('msg').textContent = "Event sent ✔";
+    document.getElementById('msg').className = "ok";
+    // 5) За бажанням робимо редирект після успіху:
+    // location.href = "/?scan=ok&frameId=" + encodeURIComponent(payload.frameId);
+  })
+  .catch((err) => {
+    document.getElementById('msg').textContent = "Failed to send event: " + err.message;
+    document.getElementById('msg').className = "err";
+  });
+})();
+</script>
+</body>
+</html>
