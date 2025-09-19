@@ -1,0 +1,27 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Scan</title></head>
+<body style="font-family:system-ui;background:#0f1520;color:#dfe7f1;padding:20px">
+  <h2 id="title">Processing scan…</h2>
+  <pre id="out" style="background:#111a27;padding:12px;border:1px solid #263246"></pre>
+  <script>
+    (async () => {
+      const p = new URLSearchParams(location.search);
+      const frame = p.get('frame');                 // напр. FRAME123
+      const checkpoint = p.get('checkpoint');       // напр. Hall3-Glass-Exit
+      const action = p.get('action') || 'forward';  // forward/back (опційно)
+
+      if(!frame){ document.getElementById('title').textContent='No frame id'; return; }
+
+      // 1) Показати миттєвий фідбек на сторінці
+      const payload = { frameId: frame, checkpoint, action, ts: new Date().toISOString(), source:'nfc' };
+      document.getElementById('title').textContent = `Frame ${frame} — scanned`;
+      document.getElementById('out').textContent = JSON.stringify(payload, null, 2);
+
+      // 2) (опційно) Відправити подію на бекенд/API — зараз заглушка
+      // РОБОЧО: заміни URL нижче на свій API коли буде готовий
+      try{
+        // await fetch('https://api.yourdomain.com/scan', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+      }catch(e){ /* тихо ігноруємо у MVP */ }
+    })();
+  </script>
+</body></html>
