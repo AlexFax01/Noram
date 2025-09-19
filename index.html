@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Supervisor — NFC Flow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0f1520;--panel:#111a27;--ink:#e8f0fb;--muted:#a8b3c7;--accent:#3aa0ff;
+      --ok:#3ddc97;--warn:#f6c945;--err:#ff5d5d;--stroke:#1e2a3e;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif}
+    .wrap{max-width:1100px;margin:0 auto;padding:16px 16px 48px}
+    h1{margin:8px 0 16px;font-size:22px}
+    .grid{display:grid;grid-template-columns:1.2fr .8fr;gap:16px}
+    .card{background:var(--panel);border:1px solid var(--stroke);border-radius:12px;padding:12px}
+    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0}
+    input,select,button{background:#0c1624;color:var(--ink);border:1px solid var(--stroke);border-radius:8px;padding:8px 10px}
+    button{cursor:pointer}
+    .tag{font-size:12px;color:var(--muted)}
+    table{width:100%;border-collapse:collapse}
+    th,td{border-bottom:1px solid var(--stroke);padding:8px;text-align:left;font-size:14px}
+    .pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#0c1624;border:1px solid var(--stroke);font-size:12px}
+    .ok{color:var(--ok)} .warn{color:var(--warn)} .err{color:var(--err)}
+    .stage{font-weight:600}
+    .footer{margin-top:16px;font-size:12px;color:var(--muted)}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>AI Supervisor — NFC Flow (MVP)</h1>
+    <div class="grid">
+      <div class="card">
+        <div class="row">
+          <label>SA/Frame_ID</label>
+          <input id="saInput" placeholder="SA-62011" class="mono" />
+          <select id="stageSelect">
+            <option value="Cutting">Hall1 — Cutting</option>
+            <option value="Assembly">Hall2 — Assembly</option>
+            <option value="Frame-Backpan">Hall3 — Frame: Backpan</option>
+            <option value="Frame-Gasket">Hall3 — Frame: Gasket</option>
+            <option value="Frame-Glass">Hall3 — Frame: Glass</option>
+            <option value="Frame-Grilles">Hall3 — Frame: Grilles</option>
+            <option value="Frame-Panels">Hall3 — Frame: Panels</option>
+            <option value="Frame-Accessories">Hall3 — Frame: Accessories</option>
+            <option value="Warehouse">Hall4 — Warehouse</option>
+            <option value="Shipping">Hall5 — Shipping</option>
+          </select>
+          <button id="placeBtn">POST /api/place</button>
+          <button id="nextBtn">NFC Next</button>
+          <button id="backBtn">NFC Back</button>
+        </div>
+        <div class="row">
+          <span class="tag">Dual Control (RFID + BOM): якщо немає RFID або BOM — статус QC HOLD</span>
+        </div>
+        <div class="row">
+          <strong>Live SA</strong>
+          <span id="liveCount" class="pill">0</span>
+        </div>
+        <table id="saTable">
+          <thead>
+            <tr>
+              <th>SA</th><th>Frame</th><th>Hall/Stage</th><th>Status</th><th>Updated</th>
+            </tr>
+          </thead>
+          <tbody id="saBody"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="row"><strong>Stock (On hand / Reserved / Available) + Locations</strong></div>
+        <table id="stockTable">
+          <thead>
+            <tr><th>SKU</th><th>Name</th><th>On hand</th><th>Reserved</th><th>Available</th><th>Locations</th></tr>
+          </thead>
+          <tbody id="stockBody"></tbody>
+        </table>
+        <div class="footer">
+          Якщо Available &lt; ROP → <a href="#" id="createPo">Create PO draft</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <strong>NFC Tips</strong>
+      <div class="row">
+        <span class="tag">iOS Shortcuts: Automation → NFC → Scan → POST /api/nfc-move {"sa":"SA-62011","op":"next"}</span>
+      </div>
+      <div class="row">
+        <span class="tag">NDEF URL: https://YOUR_FRONT/nfc?sa=SA-62011&op=next&ts=1700000000&sig=HMAC</span>
+      </div>
+    </div>
+
+    <div class="footer">Ver: mvp-1 • Supabase Realtime • HTTPS required</div>
+  </div>
+
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="./supabaseClient.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
